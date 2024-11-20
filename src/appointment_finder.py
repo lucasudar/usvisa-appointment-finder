@@ -1,5 +1,6 @@
 import datetime
 import time
+import sys
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -68,7 +69,7 @@ def check_appointments(driver):
 
     if driver.find_element(By.ID, 'consulate_date_time_not_available').is_displayed():
         print("No dates available")
-        return
+        return False
 
     date_picker = WebDriverWait(driver, 2).until(EC.element_to_be_clickable(
         (By.ID, 'appointments_consulate_appointment_date')))
@@ -89,9 +90,8 @@ def check_appointments(driver):
                 print(message)
 
                 if not is_worth_notifying(year, month, available_days):
-                    print(
-                        "Not worth notifying.")
-                    return
+                    print("Not worth notifying.")
+                    return False
 
                 for day_element in day_elements:
                     if day_element.get_attribute("class") == ' undefined':
@@ -113,9 +113,6 @@ def check_appointments(driver):
                 time_select = Select(driver.find_element(
                     By.ID, 'appointments_consulate_appointment_time'))
                 options = time_select.options
-                # print(f"Available options ({len(options)}):")
-                # for i, opt in enumerate(options):
-                #     print(f"{i}: {opt.text}")
 
                 if len(options) > 1:
                     time_select.select_by_index(1)
@@ -133,7 +130,7 @@ def check_appointments(driver):
 
                 send_message(message)
                 send_photo(driver.get_screenshot_as_png())
-                return
+                return True
 
         driver.find_element(By.CLASS_NAME, 'ui-datepicker-next').click()
         driver.find_element(By.CLASS_NAME, 'ui-datepicker-next').click()
@@ -153,7 +150,10 @@ def main():
         current_time = time.strftime('%a, %d %b %Y %H:%M:%S', time.localtime())
         print(f'Starting a new check at {current_time}.')
         try:
-            check_appointments(driver)
+            if check_appointments(driver):
+                print("Appointment found and notification sent. Stopping the script.")
+                driver.quit()
+                sys.exit(0)
         except Exception as err:
             print(f'Exception: {err}')
 
