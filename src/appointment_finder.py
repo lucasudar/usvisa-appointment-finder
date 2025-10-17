@@ -85,8 +85,7 @@ def check_appointments(driver):
                     By.CLASS_NAME, 'ui-datepicker-month').get_attribute("textContent")
                 year = date_picker.find_element(
                     By.CLASS_NAME, 'ui-datepicker-year').get_attribute("textContent")
-                message = f'Available days found in {month} {year}: {
-                    ", ".join(available_days)}. Link: {SIGN_IN_URL}'
+                message = f'Available days found in {month} {year}: {", ".join(available_days)}. Link: {SIGN_IN_URL}'
                 print(message)
 
                 if not is_worth_notifying(year, month, available_days):
