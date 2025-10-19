@@ -9,12 +9,44 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
-from creds import username, password, facility_name, latest_notification_date, seconds_between_checks
+from creds import username, password, facility_name, latest_notification_date, seconds_between_checks, start_hour, end_hour
 from telegram import send_message, send_photo
 from urls import SIGN_IN_URL, SCHEDULE_URL, APPOINTMENTS_URL
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+
+def is_within_working_hours():
+    """Check if current time is within the configured working hours."""
+    current_hour = datetime.datetime.now().hour
+
+    if start_hour > end_hour:
+        return current_hour >= start_hour or current_hour < end_hour
+    else:
+        return start_hour <= current_hour < end_hour
+
+
+def wait_until_working_hours():
+    """Wait until the start of working hours if current time is outside the window."""
+    while not is_within_working_hours():
+        current_hour = datetime.datetime.now().hour
+        current_time = datetime.datetime.now().strftime('%H:%M:%S')
+
+        # Calculate hours until start_hour
+        if start_hour > end_hour:  # Time window crosses midnight
+            if current_hour >= end_hour and current_hour < start_hour:
+                hours_to_wait = start_hour - current_hour
+            else:
+                hours_to_wait = 1
+        else:  # Normal time window
+            if current_hour < start_hour:
+                hours_to_wait = start_hour - current_hour
+            else:
+                hours_to_wait = (24 - current_hour) + start_hour
+
+        print(f'Current time {current_time} is outside working hours ({start_hour}:00 - {end_hour}:00). Waiting {hours_to_wait} hour(s) until {start_hour}:00...')
+        time.sleep(3600)  # Wait 1 hour and check again
 
 
 def log_in(driver):
@@ -142,10 +174,26 @@ def main():
         "excludeSwitches", ["enable-automation"])
     # chrome_options.add_argument("--headless")
 
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver = None
 
     while True:
+        # Wait until we're within working hours
+        wait_until_working_hours()
+
+        # Initialize browser only when within working hours
+        if driver is None:
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            print("Browser started.")
+
+        # Check if we're still within working hours before starting a check
+        if not is_within_working_hours():
+            print("Time window ended. Closing browser and waiting for next window...")
+            if driver:
+                driver.quit()
+                driver = None
+            continue
+
         current_time = time.strftime('%a, %d %b %Y %H:%M:%S', time.localtime())
         print(f'Starting a new check at {current_time}.')
         try:

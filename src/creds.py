@@ -21,6 +21,10 @@ latest_notification_date = configs.get('latest_notification_date').data
 
 seconds_between_checks = int(configs.get('seconds_between_checks').data)
 
+# Working hours (start and end hour in 24-hour format)
+start_hour = int(configs.get('start_hour').data)
+end_hour = int(configs.get('end_hour').data)
+
 # Telegram bot token and chat
 telegram_bot_token = configs.get('telegram_bot_token').data
 telegram_chat_id = configs.get('telegram_chat_id').data

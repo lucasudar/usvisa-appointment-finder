@@ -32,6 +32,8 @@ latest_notification_date=2023-10-01
 seconds_between_checks=180
 telegram_bot_token=12345:some_token
 telegram_chat_id=12345
+start_hour=16
+end_hour=2
 ```
 
 `url_id` needs to be grabbed from the url when you navigate to Reschedule Appointment page.
